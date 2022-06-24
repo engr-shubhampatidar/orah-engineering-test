@@ -12,17 +12,50 @@ import { ActiveRollOverlay, ActiveRollAction } from "staff-app/components/active
 
 export const HomeBoardPage: React.FC = () => {
   const [isRollMode, setIsRollMode] = useState(false)
+  const [studentData, setStudentData] = useState<Person[]>([])
+
+  const [orderBy, setOrderBy] = useState('');
+  const [orderIn, setOrderIn] = useState('')
+
   const [getStudents, data, loadState] = useApi<{ students: Person[] }>({ url: "get-homeboard-students" })
 
   useEffect(() => {
     void getStudents()
   }, [getStudents])
 
+  useEffect(() => {
+    if (loadState === "loaded" && data?.students) {
+      setStudentData(data?.students)
+    }
+  }, [loadState, data])
+
+
+
+
   const onToolbarAction = (action: ToolbarAction) => {
     if (action === "roll") {
       setIsRollMode(true)
     }
+
   }
+
+  const onToolBarInput = (input: ToolbarInput) => {
+    const filterData = data?.students.filter((student) =>
+      student.first_name.concat(student.last_name).toLowerCase()
+        .includes(input.toLowerCase().replace(/ /g, '')))
+    if (filterData) {
+      setStudentData(() => [...filterData])
+    }
+  }
+
+  const onToolBarOrderBy = (orderBy: ToolbarOrderBy) => {
+    setOrderBy(orderBy)
+  }
+
+  const onToolBarOrderIn = (orderIn: ToolbarOrderIn) => {
+    setOrderIn(orderIn)
+  }
+
 
   const onActiveRollAction = (action: ActiveRollAction) => {
     if (action === "exit") {
@@ -30,10 +63,39 @@ export const HomeBoardPage: React.FC = () => {
     }
   }
 
+  useEffect(() => {
+    const newData = data?.students.filter((student) => {
+      if (student.first_name.concat(student.last_name).toLowerCase().includes('alan brandon')) {
+        console.log(student)
+      }
+    }
+    )
+  }, [studentData])
+
+  const compare = (a: Person, b: Person, key: string) => {
+    if (key === "first_name") {
+      return a.first_name.localeCompare(b.first_name)
+    } else {
+      return a.last_name.localeCompare(b.last_name)
+    }
+  }
+
+  useEffect(() => {
+    if (orderBy !== "" && orderIn !== "" && data?.students) {
+      if (orderIn === "ascending") {
+        setStudentData([...data.students.sort((a, b) => compare(a, b, orderBy))])
+      }
+      if (orderIn === "descending") {
+        setStudentData([...data.students.sort((a, b) => compare(b, a, orderBy))])
+      }
+    }
+  }, [orderBy, orderIn])
+
+
   return (
     <>
       <S.PageContainer>
-        <Toolbar onItemClick={onToolbarAction} />
+        <Toolbar onItemClick={onToolbarAction} onInput={onToolBarInput} onSelectOrderBy={onToolBarOrderBy} onSelectOrderIn={onToolBarOrderIn} />
 
         {loadState === "loading" && (
           <CenteredContainer>
@@ -41,9 +103,9 @@ export const HomeBoardPage: React.FC = () => {
           </CenteredContainer>
         )}
 
-        {loadState === "loaded" && data?.students && (
+        {loadState === "loaded" && studentData && (
           <>
-            {data.students.map((s) => (
+            {studentData.map((s) => (
               <StudentListTile key={s.id} isRollMode={isRollMode} student={s} />
             ))}
           </>
@@ -60,18 +122,40 @@ export const HomeBoardPage: React.FC = () => {
   )
 }
 
-type ToolbarAction = "roll" | "sort"
+type ToolbarAction = string
+type ToolbarInput = string
+type ToolbarOrderIn = string
+type ToolbarOrderBy = string
+
 interface ToolbarProps {
-  onItemClick: (action: ToolbarAction, value?: string) => void
+  onItemClick: (action: ToolbarAction, value?: string) => void,
+  onInput: (action: ToolbarInput, value?: string) => void,
+  onSelectOrderIn: (action: ToolbarOrderIn, value?: string) => void,
+  onSelectOrderBy: (action: ToolbarOrderBy, value?: string) => void
 }
+
 const Toolbar: React.FC<ToolbarProps> = (props) => {
-  const { onItemClick } = props
+  const { onItemClick, onInput, onSelectOrderBy, onSelectOrderIn } = props
   return (
     <S.ToolbarContainer>
-      <div onClick={() => onItemClick("sort")}>First Name</div>
-      <div>Search</div>
+      {/* <div onClick={() => onItemClick("sort")}>First Name</div> */}
+      <select defaultValue={"none"} onChange={(event) => onSelectOrderIn(event?.target.value)} >
+        <option disabled value={"none"} >Select Sort</option>
+        <option value={"ascending"} >Ascending</option>
+        <option value={"descending"}>Descending</option>
+      </select>
+      {/* <div>Search</div> */}
+      <fieldset id="radio-group">
+        <label htmlFor="firstName">First Name</label>
+        <input type="radio" name="radio-group" id="firstName" value={"first_name"} onChange={(event) => onSelectOrderBy(event?.target.value)} />
+        <label htmlFor="lastName">Last Name</label>
+        <input type="radio" name="radio-group" id="lastName" value={"last_name"} onChange={(event) => onSelectOrderBy(event?.target.value)} />
+      </fieldset>
+      {/* search box  */}
+      <input type="text" name="Search Bar" id="search-bar" placeholder="Search" onChange={(event) => onInput(event.target.value)} />
+
       <S.Button onClick={() => onItemClick("roll")}>Start Roll</S.Button>
-    </S.ToolbarContainer>
+    </S.ToolbarContainer >
   )
 }
 
