@@ -9,10 +9,13 @@ import { Person } from "shared/models/person"
 import { useApi } from "shared/hooks/use-api"
 import { StudentListTile } from "staff-app/components/student-list-tile/student-list-tile.component"
 import { ActiveRollOverlay, ActiveRollAction } from "staff-app/components/active-roll-overlay/active-roll-overlay.component"
+import { RolllStateType } from "shared/models/roll"
+import { Attendance } from "shared/models/attendance"
 
 export const HomeBoardPage: React.FC = () => {
   const [isRollMode, setIsRollMode] = useState(false)
   const [studentData, setStudentData] = useState<Person[]>([])
+  const [attendance, setAttendance] = useState<Attendance>({ all: 0, present: 0, late: 0, absent: 0 })
 
   const [orderBy, setOrderBy] = useState('');
   const [orderIn, setOrderIn] = useState('')
@@ -25,18 +28,14 @@ export const HomeBoardPage: React.FC = () => {
 
   useEffect(() => {
     if (loadState === "loaded" && data?.students) {
-      setStudentData(data?.students)
+      setStudentData(() => data?.students.map((student) => ({ ...student, rollStatus: 'unmark' })))
     }
   }, [loadState, data])
-
-
-
 
   const onToolbarAction = (action: ToolbarAction) => {
     if (action === "roll") {
       setIsRollMode(true)
     }
-
   }
 
   const onToolBarInput = (input: ToolbarInput) => {
@@ -63,13 +62,38 @@ export const HomeBoardPage: React.FC = () => {
     }
   }
 
-  useEffect(() => {
-    const newData = data?.students.filter((student) => {
-      if (student.first_name.concat(student.last_name).toLowerCase().includes('alan brandon')) {
-        console.log(student)
+  const changeRollStatus = (value: RolllStateType, id: number) => {
+    setStudentData(() => studentData.map((student) => {
+      if (student.id === id) {
+        return ({ ...student, ['rollStatus']: value })
+      } else {
+        return student
       }
-    }
-    )
+    }))
+  }
+
+
+  useEffect(() => {
+    let all = 0;
+    let absent = 0;
+    let late = 0;
+    let present = 0;
+
+    studentData.map((student) => {
+      if (student.rollStatus) {
+        if (student.rollStatus === "present") {
+          present += 1;
+        }
+        if (student.rollStatus === "late") {
+          late += 1;
+        }
+        if (student.rollStatus === "absent") {
+          absent += 1;
+        }
+        all += 1;
+      }
+    })
+    setAttendance({ ...attendance, all, present, late, absent })
   }, [studentData])
 
   const compare = (a: Person, b: Person, key: string) => {
@@ -106,7 +130,7 @@ export const HomeBoardPage: React.FC = () => {
         {loadState === "loaded" && studentData && (
           <>
             {studentData.map((s) => (
-              <StudentListTile key={s.id} isRollMode={isRollMode} student={s} />
+              <StudentListTile key={s.id} isRollMode={isRollMode} student={s} onRollChange={changeRollStatus} />
             ))}
           </>
         )}
@@ -117,7 +141,7 @@ export const HomeBoardPage: React.FC = () => {
           </CenteredContainer>
         )}
       </S.PageContainer>
-      <ActiveRollOverlay isActive={isRollMode} onItemClick={onActiveRollAction} />
+      <ActiveRollOverlay isActive={isRollMode} onItemClick={onActiveRollAction} attendance={attendance} />
     </>
   )
 }

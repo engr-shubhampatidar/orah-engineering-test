@@ -3,12 +3,12 @@ import { RolllStateType } from "shared/models/roll"
 import { RollStateIcon } from "staff-app/components/roll-state/roll-state-icon.component"
 
 interface Props {
-  initialState?: RolllStateType
   size?: number
   onStateChange?: (newState: RolllStateType) => void
+  rollStatus?: RolllStateType
 }
-export const RollStateSwitcher: React.FC<Props> = ({ initialState = "unmark", size = 40, onStateChange }) => {
-  const [rollState, setRollState] = useState(initialState)
+export const RollStateSwitcher: React.FC<Props> = ({/*  initialState = "unmark", */ size = 40, onStateChange, rollStatus }) => {
+  const [rollState, setRollState] = useState(rollStatus ?? "unmark")
 
   const nextState = () => {
     const states: RolllStateType[] = ["present", "late", "absent"]
