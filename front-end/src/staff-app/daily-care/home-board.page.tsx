@@ -47,8 +47,6 @@ export const HomeBoardPage: React.FC = () => {
     }
   }
 
-  console.log(studentData, data?.students)
-
   const onToolBarInput = (input: ToolbarInput) => {
     const filterData = data?.students.filter((student) =>
       student.first_name.concat(student.last_name).toLowerCase()
@@ -76,6 +74,7 @@ export const HomeBoardPage: React.FC = () => {
     }
     if (action === "saveActiveRoll") {
       saveRoll();
+      setIsRollMode(false)
     }
   }
 
@@ -112,21 +111,16 @@ export const HomeBoardPage: React.FC = () => {
 
     changeAttendance()
 
+
     if (studentRollStatus?.student_roll_states.length > 0) {
-      const data = { student_roll_states: [...studentRollStatus?.student_roll_states] }
-      let index = -1;
-      for (let i = 0; i < studentRollStatus.student_roll_states.length; i++) {
-        if (studentRollStatus.student_roll_states[i].student_id === id) {
-          index = i;
-          return;
-        }
-      }
-      if (index > 0) {
-        data.student_roll_states[index].roll_state = value;
+      let index = studentRollStatus.student_roll_states.findIndex(student => student.student_id === id)
+      if (index >= 0) {
+        const newData = { student_roll_states: [...studentRollStatus?.student_roll_states] }
+        newData.student_roll_states[index].roll_state = value;
+        setStudentRollStatus(newData)
       } else {
-        data.student_roll_states.push({ student_id: id, roll_state: value })
+        setStudentRollStatus({ student_roll_states: [...studentRollStatus?.student_roll_states, { student_id: id, roll_state: value }] })
       }
-      setStudentRollStatus(data)
     } else {
       setStudentRollStatus({ student_roll_states: [{ student_id: id, roll_state: value }] })
     }

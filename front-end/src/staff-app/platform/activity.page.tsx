@@ -1,4 +1,4 @@
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from "@material-ui/core"
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, Box } from "@material-ui/core"
 import React, { useEffect } from "react"
 import { useApi } from "shared/hooks/use-api"
 import { Activity } from "shared/models/activity"
@@ -15,10 +15,12 @@ export const ActivityPage: React.FC = () => {
     getActivities()
   }, [])
 
+  console.log(data)
+
   return (
     <>
       <S.Container>
-        <S.Typography variant="h5" >Activities</S.Typography>
+        <S.Typography variant="h5">Activities</S.Typography>
 
         {loadState === "loading" && (
           <CenteredContainer>
@@ -26,30 +28,38 @@ export const ActivityPage: React.FC = () => {
           </CenteredContainer>
         )}
 
-        {loadState === "loaded" && (data?.activity.length ? <S.TableContainer>
-          <S.Table>
-            <S.TableHead>
-              <S.TableRow>
-                <S.TableCell>S.no</S.TableCell>
-                <S.TableCell>Roll</S.TableCell>
-                <S.TableCell>Roll Status</S.TableCell>
-                <S.TableCell>Date</S.TableCell>
-              </S.TableRow>
-            </S.TableHead>
-            <S.TableBody>
-              {data?.activity.map((activity, index) => {
-                return (
-                  <S.TableRow key={index} >
-                    <S.TableCell>{index + 1}</S.TableCell>
-                    <S.TableCell>{activity.entity.name}</S.TableCell>
-                    <S.TableCell>{activity.entity.student_roll_states[0].roll_state}</S.TableCell>
-                    <S.TableCell>{new Date(activity.date).toDateString()}</S.TableCell>
-                  </S.TableRow>
-                )
+        {loadState === "loaded" &&
+          (data?.activity.length ? (
+            <>
+              {data.activity.map((roll, index) => {
+                return <S.Box key={index}>
+                  <S.Date>Date - {new Date(roll.date).toLocaleString()}</S.Date>
+                  <S.TableContainer>
+                    <S.Table>
+                      <S.TableHead>
+                        <S.TableRow >
+                          <S.TableCell align="center" >Student Id</S.TableCell>
+                          <S.TableCell align="center" >Roll Status</S.TableCell>
+                        </S.TableRow>
+                      </S.TableHead>
+                      <S.TableBody>
+                        {roll?.entity?.student_roll_states.map((activity, index) => {
+                          return (
+                            <S.TableRow key={index}>
+                              <S.TableCell align="center">{activity.student_id}</S.TableCell>
+                              <S.TableCell align="center" >{activity.roll_state}</S.TableCell>
+                            </S.TableRow>
+                          )
+                        })}
+                      </S.TableBody>
+                    </S.Table>
+                  </S.TableContainer>
+                </S.Box>
               })}
-            </S.TableBody>
-          </S.Table>
-        </S.TableContainer> : <S.BlankMessage variant="h1" >No Activites Yet</S.BlankMessage>)}
+            </>
+          ) : (
+            <S.BlankMessage variant="h1">No Activites Yet</S.BlankMessage>
+          ))}
 
         {loadState === "error" && (
           <CenteredContainer>
@@ -91,16 +101,33 @@ const S = {
   `,
   TableCell: styled(TableCell)`
     && {
+      align: ${(props) => props.align ? "center" : "left"}
     }
   `,
-  Typography: styled(Typography)`&&{
-    background: #343f64;
+  Typography: styled(Typography)`
+    && {
+      background: #343f64;
+      color: white;
+      font-weight: ${FontWeight.mediumStrong};
+    }
+  `,
+  Date: styled(Typography)`
+    && {
     color: white;
-    font-weight: ${FontWeight.mediumStrong};
+    font-weight: 500;
+    background: cornflowerblue;
+    }
+  `,
+  BlankMessage: styled(Typography)`
+    && {
+      color: black;
+      margin-top: 50px;
+      font-weight: ${FontWeight.mediumStrong};
+    }
+  `,
+  Box: styled(Box)`&&{
+    border: 2px solid #e4cf0a1f;
+    background: aliceblue;
+    margin: 10px 0;
   }`,
-  BlankMessage: styled(Typography)`&&{
-    color: black;
-    margin-top: 50px;
-    font-weight: ${FontWeight.mediumStrong};
-  }`
 }
