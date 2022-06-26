@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react"
 import styled from "styled-components"
 import Button from "@material-ui/core/ButtonBase"
+import { Box } from "@material-ui/core"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { Spacing, BorderRadius, FontWeight } from "shared/styles/styles"
 import { Colors } from "shared/styles/colors"
@@ -68,6 +69,12 @@ export const HomeBoardPage: React.FC = () => {
     setRollData()
   }
 
+  const resetFilter = () => {
+    if (data?.students) {
+      setStudentData(data.students)
+    }
+  }
+
   const onActiveRollAction = (action: ActiveRollAction) => {
     if (action === "exit") {
       setIsRollMode(false)
@@ -76,6 +83,7 @@ export const HomeBoardPage: React.FC = () => {
       saveRoll();
       setIsRollMode(false)
     }
+    resetFilter()
   }
 
 
@@ -110,7 +118,6 @@ export const HomeBoardPage: React.FC = () => {
     })
 
     changeAttendance()
-
 
     if (studentRollStatus?.student_roll_states.length > 0) {
       let index = studentRollStatus.student_roll_states.findIndex(student => student.student_id === id)
@@ -168,13 +175,13 @@ export const HomeBoardPage: React.FC = () => {
           </CenteredContainer>
         )}
 
-        {loadState === "loaded" && studentData && (
+        {loadState === "loaded" && (studentData.length ? (
           <>
             {studentData.map((s) => (
               <StudentListTile key={s.id} isRollMode={isRollMode} student={s} onRollChange={changeRollStatus} />
             ))}
           </>
-        )}
+        ) : <p>No Match Found</p>)}
 
         {loadState === "error" && (
           <CenteredContainer>
@@ -202,18 +209,20 @@ const Toolbar: React.FC<ToolbarProps> = (props) => {
 
   return (
     <S.ToolbarContainer>
-      {/* Order In  */}
-      <S.Select defaultValue={"none"} onChange={(event) => onSelectOrderIn(event.target.value as ToolbarOrderIn)}>
-        <S.Option value={"none"} disabled >Order In</S.Option>
-        <S.Option value={"ascending"} >Ascending</S.Option>
-        <S.Option value={"descending"}>Descending</S.Option>
-      </S.Select>
-      {/* Order By  */}
-      <S.Select defaultValue={"none"} onChange={(event) => onSelectOrderBy(event.target.value as ToolbarOrderBy)}>
-        <S.Option value={"none"} disabled >Order By</S.Option>
-        <S.Option value={"first_name"} >First Name</S.Option>
-        <S.Option value={"last_name"}>Last Name</S.Option>
-      </S.Select>
+      <Box>
+        {/* Order In  */}
+        <S.Select defaultValue={"none"} onChange={(event) => onSelectOrderIn(event.target.value as ToolbarOrderIn)}>
+          <S.Option value={"none"} disabled >Order In</S.Option>
+          <S.Option value={"ascending"} >Ascending</S.Option>
+          <S.Option value={"descending"}>Descending</S.Option>
+        </S.Select>
+        {/* Order By  */}
+        <S.Select defaultValue={"none"} onChange={(event) => onSelectOrderBy(event.target.value as ToolbarOrderBy)}>
+          <S.Option value={"none"} disabled >Order By</S.Option>
+          <S.Option value={"first_name"} >First Name</S.Option>
+          <S.Option value={"last_name"}>Last Name</S.Option>
+        </S.Select>
+      </Box>
       {/* search box  */}
       <S.SearchBar type="text" name="Search Bar" id="search-bar" placeholder="Search" onChange={(event) => onInput(event.target.value)} />
       {/* Roll  */}

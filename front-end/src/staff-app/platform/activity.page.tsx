@@ -35,24 +35,24 @@ export const ActivityPage: React.FC = () => {
                 return <S.Box key={index}>
                   <S.Date>Date - {new Date(roll.date).toLocaleString()}</S.Date>
                   <S.TableContainer>
-                    <S.Table>
-                      <S.TableHead>
-                        <S.TableRow >
-                          <S.TableCell align="center" >Student Id</S.TableCell>
-                          <S.TableCell align="center" >Roll Status</S.TableCell>
-                        </S.TableRow>
-                      </S.TableHead>
-                      <S.TableBody>
+                    <Table>
+                      <TableHead>
+                        <TableRow >
+                          <TableCell align="center" >Student Id</TableCell>
+                          <TableCell align="center" >Roll Status</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
                         {roll?.entity?.student_roll_states.map((activity, index) => {
                           return (
-                            <S.TableRow key={index}>
-                              <S.TableCell align="center">{activity.student_id}</S.TableCell>
-                              <S.TableCell align="center" >{activity.roll_state}</S.TableCell>
-                            </S.TableRow>
+                            <TableRow key={index}>
+                              <TableCell align="center">{activity.student_id}</TableCell>
+                              <TableCell align="center" >{activity.roll_state}</TableCell>
+                            </TableRow>
                           )
                         })}
-                      </S.TableBody>
-                    </S.Table>
+                      </TableBody>
+                    </Table>
                   </S.TableContainer>
                 </S.Box>
               })}
@@ -81,27 +81,11 @@ const S = {
   `,
   TableContainer: styled(TableContainer)`
     && {
-    }
-  `,
-  Table: styled(Table)`
-    && {
-    }
-  `,
-  TableHead: styled(TableHead)`
-    && {
-    }
-  `,
-  TableRow: styled(TableRow)`
-    && {
-    }
-  `,
-  TableBody: styled(TableBody)`
-    && {
-    }
-  `,
-  TableCell: styled(TableCell)`
-    && {
-      align: ${(props) => props.align ? "center" : "left"}
+    border-left: 2px solid #1d4ae01f;
+    border-right: 2px solid #1d4ae01f;
+    border-bottom: 22px solid #1d4ae01f;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
     }
   `,
   Typography: styled(Typography)`
@@ -109,13 +93,17 @@ const S = {
       background: #343f64;
       color: white;
       font-weight: ${FontWeight.mediumStrong};
+      border-radius: 5px;
     }
   `,
   Date: styled(Typography)`
     && {
     color: white;
     font-weight: 500;
-    background: cornflowerblue;
+    background: #495b9b8c;
+    width: 100%;
+    padding: 2px;
+    border-radius: 5px 5px 0 0;
     }
   `,
   BlankMessage: styled(Typography)`
@@ -126,8 +114,6 @@ const S = {
     }
   `,
   Box: styled(Box)`&&{
-    border: 2px solid #e4cf0a1f;
-    background: aliceblue;
     margin: 10px 0;
   }`,
 }
