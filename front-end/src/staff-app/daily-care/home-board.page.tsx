@@ -9,26 +9,35 @@ import { Person } from "shared/models/person"
 import { useApi } from "shared/hooks/use-api"
 import { StudentListTile } from "staff-app/components/student-list-tile/student-list-tile.component"
 import { ActiveRollOverlay, ActiveRollAction } from "staff-app/components/active-roll-overlay/active-roll-overlay.component"
-import { RolllStateType } from "shared/models/roll"
+import { RollInput, RolllStateType } from "shared/models/roll"
 import { Attendance } from "shared/models/attendance"
 
+export type ToolbarOrderBy = "first_name" | "last_name"
+export type ToolbarOrderIn = "ascending" | "descending"
 export const HomeBoardPage: React.FC = () => {
   const [isRollMode, setIsRollMode] = useState(false)
   const [studentData, setStudentData] = useState<Person[]>([])
+
   const [attendance, setAttendance] = useState<Attendance>({ all: 0, present: 0, late: 0, absent: 0 })
 
-  const [orderBy, setOrderBy] = useState('');
-  const [orderIn, setOrderIn] = useState('')
+  const [studentRollStatus, setStudentRollStatus] = useState<RollInput>({ student_roll_states: [] });
+
+  const [orderBy, setOrderBy] = useState<ToolbarOrderBy>();
+  const [orderIn, setOrderIn] = useState<ToolbarOrderIn>()
 
   const [getStudents, data, loadState] = useApi<{ students: Person[] }>({ url: "get-homeboard-students" })
+
+  const [setRollData, loadStates] = useApi({ url: "save-roll", params: studentRollStatus })
+
 
   useEffect(() => {
     void getStudents()
   }, [getStudents])
 
+
   useEffect(() => {
-    if (loadState === "loaded" && data?.students) {
-      setStudentData(() => data?.students.map((student) => ({ ...student, rollStatus: 'unmark' })))
+    if (data?.students) {
+      setStudentData(data?.students)
     }
   }, [loadState, data])
 
@@ -37,6 +46,8 @@ export const HomeBoardPage: React.FC = () => {
       setIsRollMode(true)
     }
   }
+
+  console.log(studentData, data?.students)
 
   const onToolBarInput = (input: ToolbarInput) => {
     const filterData = data?.students.filter((student) =>
@@ -47,39 +58,35 @@ export const HomeBoardPage: React.FC = () => {
     }
   }
 
-  const onToolBarOrderBy = (orderBy: ToolbarOrderBy) => {
-    setOrderBy(orderBy)
+  const onToolBarOrderBy = (value?: ToolbarOrderBy) => {
+    setOrderBy(value)
   }
 
-  const onToolBarOrderIn = (orderIn: ToolbarOrderIn) => {
-    setOrderIn(orderIn)
+  const onToolBarOrderIn = (value?: ToolbarOrderIn) => {
+    setOrderIn(value)
   }
 
+  const saveRoll = () => {
+    setRollData()
+  }
 
   const onActiveRollAction = (action: ActiveRollAction) => {
     if (action === "exit") {
       setIsRollMode(false)
     }
-  }
-
-  const changeRollStatus = (value: RolllStateType, id: number) => {
-    setStudentData(() => studentData.map((student) => {
-      if (student.id === id) {
-        return ({ ...student, ['rollStatus']: value })
-      } else {
-        return student
-      }
-    }))
+    if (action === "saveActiveRoll") {
+      saveRoll();
+    }
   }
 
 
-  useEffect(() => {
+  const changeAttendance = () => {
     let all = 0;
     let absent = 0;
     let late = 0;
     let present = 0;
 
-    studentData.map((student) => {
+    data?.students.map((student) => {
       if (student.rollStatus) {
         if (student.rollStatus === "present") {
           present += 1;
@@ -94,23 +101,63 @@ export const HomeBoardPage: React.FC = () => {
       }
     })
     setAttendance({ ...attendance, all, present, late, absent })
-  }, [studentData])
+  }
 
-  const compare = (a: Person, b: Person, key: string) => {
-    if (key === "first_name") {
-      return a.first_name.localeCompare(b.first_name)
+  const changeRollStatus = (value: RolllStateType, id: number) => {
+    data?.students.map((student, index) => {
+      if (student.id === id) {
+        data.students[index].rollStatus = value;
+      }
+    })
+
+    changeAttendance()
+
+    if (studentRollStatus?.student_roll_states.length > 0) {
+      const data = { student_roll_states: [...studentRollStatus?.student_roll_states] }
+      let index = -1;
+      for (let i = 0; i < studentRollStatus.student_roll_states.length; i++) {
+        if (studentRollStatus.student_roll_states[i].student_id === id) {
+          index = i;
+          return;
+        }
+      }
+      if (index > 0) {
+        data.student_roll_states[index].roll_state = value;
+      } else {
+        data.student_roll_states.push({ student_id: id, roll_state: value })
+      }
+      setStudentRollStatus(data)
     } else {
-      return a.last_name.localeCompare(b.last_name)
+      setStudentRollStatus({ student_roll_states: [{ student_id: id, roll_state: value }] })
+    }
+  }
+
+  const filterByRole = (value: string) => {
+    if (data?.students) {
+      if (value === "all") {
+        setStudentData(data?.students)
+      } else {
+        setStudentData([...data?.students.filter((student) => student.rollStatus === value)])
+      }
+    }
+  }
+
+  //  Filter  
+  const compare = (a: Person, b: Person, key?: ToolbarOrderBy) => {
+    if (key) {
+      return a[key].localeCompare(b[key])
+    } else {
+      return a.first_name.localeCompare(b.first_name)
     }
   }
 
   useEffect(() => {
-    if (orderBy !== "" && orderIn !== "" && data?.students) {
+    if (orderIn && data?.students) {
       if (orderIn === "ascending") {
-        setStudentData([...data.students.sort((a, b) => compare(a, b, orderBy))])
+        setStudentData(() => [...data.students.sort((a, b) => compare(a, b, orderBy))])
       }
       if (orderIn === "descending") {
-        setStudentData([...data.students.sort((a, b) => compare(b, a, orderBy))])
+        setStudentData(() => [...data.students.sort((a, b) => compare(b, a, orderBy))])
       }
     }
   }, [orderBy, orderIn])
@@ -141,43 +188,41 @@ export const HomeBoardPage: React.FC = () => {
           </CenteredContainer>
         )}
       </S.PageContainer>
-      <ActiveRollOverlay isActive={isRollMode} onItemClick={onActiveRollAction} attendance={attendance} />
+      <ActiveRollOverlay isActive={isRollMode} onItemClick={onActiveRollAction} attendance={attendance} onRollTypeClick={filterByRole} />
     </>
   )
 }
 
 type ToolbarAction = string
 type ToolbarInput = string
-type ToolbarOrderIn = string
-type ToolbarOrderBy = string
 
 interface ToolbarProps {
   onItemClick: (action: ToolbarAction, value?: string) => void,
   onInput: (action: ToolbarInput, value?: string) => void,
-  onSelectOrderIn: (action: ToolbarOrderIn, value?: string) => void,
-  onSelectOrderBy: (action: ToolbarOrderBy, value?: string) => void
+  onSelectOrderIn: (value: ToolbarOrderIn) => void,
+  onSelectOrderBy: (value: ToolbarOrderBy) => void
 }
 
 const Toolbar: React.FC<ToolbarProps> = (props) => {
   const { onItemClick, onInput, onSelectOrderBy, onSelectOrderIn } = props
+
   return (
     <S.ToolbarContainer>
-      {/* <div onClick={() => onItemClick("sort")}>First Name</div> */}
-      <select defaultValue={"none"} onChange={(event) => onSelectOrderIn(event?.target.value)} >
-        <option disabled value={"none"} >Select Sort</option>
-        <option value={"ascending"} >Ascending</option>
-        <option value={"descending"}>Descending</option>
-      </select>
-      {/* <div>Search</div> */}
-      <fieldset id="radio-group">
-        <label htmlFor="firstName">First Name</label>
-        <input type="radio" name="radio-group" id="firstName" value={"first_name"} onChange={(event) => onSelectOrderBy(event?.target.value)} />
-        <label htmlFor="lastName">Last Name</label>
-        <input type="radio" name="radio-group" id="lastName" value={"last_name"} onChange={(event) => onSelectOrderBy(event?.target.value)} />
-      </fieldset>
+      {/* Order In  */}
+      <S.Select defaultValue={"none"} onChange={(event) => onSelectOrderIn(event.target.value as ToolbarOrderIn)}>
+        <S.Option value={"none"} disabled >Order In</S.Option>
+        <S.Option value={"ascending"} >Ascending</S.Option>
+        <S.Option value={"descending"}>Descending</S.Option>
+      </S.Select>
+      {/* Order By  */}
+      <S.Select defaultValue={"none"} onChange={(event) => onSelectOrderBy(event.target.value as ToolbarOrderBy)}>
+        <S.Option value={"none"} disabled >Order By</S.Option>
+        <S.Option value={"first_name"} >First Name</S.Option>
+        <S.Option value={"last_name"}>Last Name</S.Option>
+      </S.Select>
       {/* search box  */}
-      <input type="text" name="Search Bar" id="search-bar" placeholder="Search" onChange={(event) => onInput(event.target.value)} />
-
+      <S.SearchBar type="text" name="Search Bar" id="search-bar" placeholder="Search" onChange={(event) => onInput(event.target.value)} />
+      {/* Roll  */}
       <S.Button onClick={() => onItemClick("roll")}>Start Roll</S.Button>
     </S.ToolbarContainer >
   )
@@ -207,4 +252,23 @@ const S = {
       border-radius: ${BorderRadius.default};
     }
   `,
+  Select: styled.select`{
+    cursor: pointer;
+    padding: 7px;
+    border-radius: 2px;
+    background: transparent;
+    color: white;
+    border: none;
+  }`,
+  Option: styled.option`{
+    background: white;
+    color: black;
+  }`,
+  SearchBar: styled.input`{
+    padding: 6px;
+    border-radius: 2px;
+    background: transparent;
+    color: white;
+    border: 1px solid grey;
+  }`,
 }

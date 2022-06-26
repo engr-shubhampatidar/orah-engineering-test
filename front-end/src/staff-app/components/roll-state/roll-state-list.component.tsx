@@ -17,6 +17,7 @@ export const RollStateList: React.FC<Props> = ({ stateList, size = 14, onItemCli
     }
   }
 
+
   return (
     <S.ListContainer>
       {stateList.map((s, i) => {

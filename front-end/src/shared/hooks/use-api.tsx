@@ -8,11 +8,12 @@ import { saveActiveRoll } from "api/save-active-roll"
 interface Options {
   url: Endpoint
   initialLoadState?: LoadState
+  params?: RollInput
 }
-export function useApi<ReturnType = {}>({ url, initialLoadState = "loading" }: Options) {
+export function useApi<ReturnType = {}>({ url, initialLoadState = "loading", params }: Options) {
   const [state, dispatch] = useReducer(stateReducer<ReturnType>(), { data: undefined, loadState: initialLoadState, error: undefined })
   const callApi = useCallback(
-    async (params?: object) => {
+    async () => {
       dispatch({ type: "loading" })
 
       function process(result: ApiResponse<ReturnType>) {
@@ -32,7 +33,7 @@ export function useApi<ReturnType = {}>({ url, initialLoadState = "loading" }: O
           return saveActiveRoll(params as RollInput).then(process)
       }
     },
-    [url]
+    [url, params]
   )
 
   return [callApi, state.data, state.loadState, state.error] as const
