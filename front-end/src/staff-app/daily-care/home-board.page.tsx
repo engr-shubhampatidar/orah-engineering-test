@@ -12,6 +12,7 @@ import { StudentListTile } from "staff-app/components/student-list-tile/student-
 import { ActiveRollOverlay, ActiveRollAction } from "staff-app/components/active-roll-overlay/active-roll-overlay.component"
 import { RollInput, RolllStateType } from "shared/models/roll"
 import { Attendance } from "shared/models/attendance"
+import { SearchAlgorithms } from "staff-app/components/Functions/SearchAlgorithms"
 
 export type ToolbarOrderBy = "first_name" | "last_name"
 export type ToolbarOrderIn = "ascending" | "descending"
@@ -26,9 +27,9 @@ export const HomeBoardPage: React.FC = () => {
   const [orderBy, setOrderBy] = useState<ToolbarOrderBy>();
   const [orderIn, setOrderIn] = useState<ToolbarOrderIn>()
 
+  //  api calls 
   const [getStudents, data, loadState] = useApi<{ students: Person[] }>({ url: "get-homeboard-students" })
-
-  const [setRollData, loadStates] = useApi({ url: "save-roll", params: studentRollStatus })
+  const [setRollData] = useApi({ url: "save-roll", params: studentRollStatus })
 
 
   useEffect(() => {
@@ -42,6 +43,26 @@ export const HomeBoardPage: React.FC = () => {
     }
   }, [loadState, data])
 
+  //  Filter  
+  const compare = (a: Person, b: Person, key?: ToolbarOrderBy) => {
+    if (key) {
+      return a[key].localeCompare(b[key])
+    } else {
+      return a.first_name.localeCompare(b.first_name)
+    }
+  }
+
+  useEffect(() => {
+    if (orderIn && data?.students) {
+      if (orderIn === "ascending") {
+        setStudentData(() => [...data.students.sort((a, b) => compare(a, b, orderBy))])
+      }
+      if (orderIn === "descending") {
+        setStudentData(() => [...data.students.sort((a, b) => compare(b, a, orderBy))])
+      }
+    }
+  }, [orderBy, orderIn])
+
   const onToolbarAction = (action: ToolbarAction) => {
     if (action === "roll") {
       setIsRollMode(true)
@@ -49,11 +70,8 @@ export const HomeBoardPage: React.FC = () => {
   }
 
   const onToolBarInput = (input: ToolbarInput) => {
-    const filterData = data?.students.filter((student) =>
-      student.first_name.concat(student.last_name).toLowerCase()
-        .includes(input.toLowerCase().replace(/ /g, '')))
-    if (filterData) {
-      setStudentData(() => [...filterData])
+    if (data?.students) {
+      setStudentData(() => [...SearchAlgorithms(input, data?.students)])
     }
   }
 
@@ -143,25 +161,7 @@ export const HomeBoardPage: React.FC = () => {
     }
   }
 
-  //  Filter  
-  const compare = (a: Person, b: Person, key?: ToolbarOrderBy) => {
-    if (key) {
-      return a[key].localeCompare(b[key])
-    } else {
-      return a.first_name.localeCompare(b.first_name)
-    }
-  }
 
-  useEffect(() => {
-    if (orderIn && data?.students) {
-      if (orderIn === "ascending") {
-        setStudentData(() => [...data.students.sort((a, b) => compare(a, b, orderBy))])
-      }
-      if (orderIn === "descending") {
-        setStudentData(() => [...data.students.sort((a, b) => compare(b, a, orderBy))])
-      }
-    }
-  }, [orderBy, orderIn])
 
 
   return (
@@ -217,14 +217,14 @@ const Toolbar: React.FC<ToolbarProps> = (props) => {
           <S.Option value={"descending"}>Descending</S.Option>
         </S.Select>
         {/* Order By  */}
-        <S.Select defaultValue={"none"} onChange={(event) => onSelectOrderBy(event.target.value as ToolbarOrderBy)}>
+        < S.Select defaultValue={"none"} onChange={(event) => onSelectOrderBy(event.target.value as ToolbarOrderBy)}>
           <S.Option value={"none"} disabled >Order By</S.Option>
           <S.Option value={"first_name"} >First Name</S.Option>
           <S.Option value={"last_name"}>Last Name</S.Option>
-        </S.Select>
-      </Box>
+        </S.Select >
+      </Box >
       {/* search box  */}
-      <S.SearchBar type="text" name="Search Bar" id="search-bar" placeholder="Search" onChange={(event) => onInput(event.target.value)} />
+      < S.SearchBar type="text" name="Search Bar" id="search-bar" placeholder="Search" onChange={(event) => onInput(event.target.value)} />
       {/* Roll  */}
       <S.Button onClick={() => onItemClick("roll")}>Start Roll</S.Button>
     </S.ToolbarContainer >
