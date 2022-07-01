@@ -31,7 +31,6 @@ export const HomeBoardPage: React.FC = () => {
   const [getStudents, data, loadState] = useApi<{ students: Person[] }>({ url: "get-homeboard-students" })
   const [setRollData] = useApi({ url: "save-roll", params: studentRollStatus })
 
-
   useEffect(() => {
     void getStudents()
   }, [getStudents])
@@ -52,6 +51,7 @@ export const HomeBoardPage: React.FC = () => {
     }
   }
 
+
   useEffect(() => {
     if (orderIn && data?.students) {
       if (orderIn === "ascending") {
@@ -62,6 +62,7 @@ export const HomeBoardPage: React.FC = () => {
       }
     }
   }, [orderBy, orderIn])
+
 
   const onToolbarAction = (action: ToolbarAction) => {
     if (action === "roll") {
@@ -161,9 +162,6 @@ export const HomeBoardPage: React.FC = () => {
     }
   }
 
-
-
-
   return (
     <>
       <S.PageContainer>
@@ -181,7 +179,7 @@ export const HomeBoardPage: React.FC = () => {
               <StudentListTile key={s.id} isRollMode={isRollMode} student={s} onRollChange={changeRollStatus} />
             ))}
           </>
-        ) : <p>No Match Found</p>)}
+        ) : <S.ErrorMessage>No Match Found</S.ErrorMessage>)}
 
         {loadState === "error" && (
           <CenteredContainer>
@@ -274,4 +272,11 @@ const S = {
     color: white;
     border: 1px solid grey;
   }`,
+  ErrorMessage: styled.p`{
+    background: #1b4f90;
+    text-align: center;
+    font-weight: 700;
+    color: white;
+    border-radius: 5px;
+  }`
 }
