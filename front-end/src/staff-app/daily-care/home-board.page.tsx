@@ -16,6 +16,7 @@ import { SearchAlgorithms } from "staff-app/components/Functions/SearchAlgorithm
 
 export type ToolbarOrderBy = "first_name" | "last_name"
 export type ToolbarOrderIn = "ascending" | "descending"
+
 export const HomeBoardPage: React.FC = () => {
   const [isRollMode, setIsRollMode] = useState(false)
   const [studentData, setStudentData] = useState<Person[]>([])
@@ -107,10 +108,7 @@ export const HomeBoardPage: React.FC = () => {
 
 
   const changeAttendance = () => {
-    let all = 0;
-    let absent = 0;
-    let late = 0;
-    let present = 0;
+    let all = 0; let absent = 0; let late = 0; let present = 0;
 
     data?.students.map((student) => {
       if (student.rollStatus) {
@@ -129,27 +127,39 @@ export const HomeBoardPage: React.FC = () => {
     setAttendance({ ...attendance, all, present, late, absent })
   }
 
-  const changeRollStatus = (value: RolllStateType, id: number) => {
+  const updateInStudentList = (value: RolllStateType, id: number) => {
     data?.students.map((student, index) => {
       if (student.id === id) {
         data.students[index].rollStatus = value;
       }
     })
+  }
 
-    changeAttendance()
+  const updateAttendanceAndRoll = (value: RolllStateType, id: number) => {
+
+    updateInStudentList(value, id);
 
     if (studentRollStatus?.student_roll_states.length > 0) {
       let index = studentRollStatus.student_roll_states.findIndex(student => student.student_id === id)
       if (index >= 0) {
-        const newData = { student_roll_states: [...studentRollStatus?.student_roll_states] }
-        newData.student_roll_states[index].roll_state = value;
-        setStudentRollStatus(newData)
+        setStudentRollStatus((previousState) => ({
+          // now we'll use cached value
+          student_roll_states: previousState.student_roll_states.map(((item, i) => i === index
+            ? Object.assign(item, { roll_state: value })
+            : item))
+        }));
       } else {
         setStudentRollStatus({ student_roll_states: [...studentRollStatus?.student_roll_states, { student_id: id, roll_state: value }] })
       }
     } else {
       setStudentRollStatus({ student_roll_states: [{ student_id: id, roll_state: value }] })
     }
+  }
+
+
+  const changeRollStatus = (value: RolllStateType, id: number) => {
+    updateAttendanceAndRoll(value, id)
+    changeAttendance()
   }
 
   const filterByRole = (value: string) => {
