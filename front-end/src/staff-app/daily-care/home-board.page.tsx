@@ -1,32 +1,31 @@
-import React, { useState, useEffect } from "react"
-import styled from "styled-components"
-import Button from "@material-ui/core/ButtonBase"
-import { Box } from "@material-ui/core"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { Spacing, BorderRadius, FontWeight } from "shared/styles/styles"
-import { Colors } from "shared/styles/colors"
+import React, { useCallback, useEffect, useState } from "react"
 import { CenteredContainer } from "shared/components/centered-container/centered-container.component"
-import { Person } from "shared/models/person"
 import { useApi } from "shared/hooks/use-api"
-import { StudentListTile } from "staff-app/components/student-list-tile/student-list-tile.component"
-import { ActiveRollOverlay, ActiveRollAction } from "staff-app/components/active-roll-overlay/active-roll-overlay.component"
-import { RollInput, RolllStateType } from "shared/models/roll"
 import { Attendance } from "shared/models/attendance"
-import { SearchAlgorithms } from "staff-app/components/Functions/SearchAlgorithms"
+import { Person } from "shared/models/person"
+import { RollInput, RolllStateType } from "shared/models/roll"
+import { Spacing } from "shared/styles/styles"
+import { ActiveRollAction, ActiveRollOverlay } from "staff-app/components/active-roll-overlay/active-roll-overlay.component"
+import { StudentListTile } from "staff-app/components/student-list-tile/student-list-tile.component"
+import { Toolbar, ToolbarAction, ToolbarInput } from 'staff-app/components/tool-bar/toolbar'
+import { getAttendence, SearchAlgorithms } from "staff-app/components/utils/util"
+import styled from "styled-components"
 
 export type ToolbarOrderBy = "first_name" | "last_name"
 export type ToolbarOrderIn = "ascending" | "descending"
 
 export const HomeBoardPage: React.FC = () => {
+  // states
   const [isRollMode, setIsRollMode] = useState(false)
-  const [studentData, setStudentData] = useState<Person[]>([])
-
-  const [attendance, setAttendance] = useState<Attendance>({ all: 0, present: 0, late: 0, absent: 0 })
-
-  const [studentRollStatus, setStudentRollStatus] = useState<RollInput>({ student_roll_states: [] });
 
   const [orderBy, setOrderBy] = useState<ToolbarOrderBy>();
   const [orderIn, setOrderIn] = useState<ToolbarOrderIn>()
+
+  const [studentData, setStudentData] = useState<Person[]>([])
+
+  const [attendance, setAttendance] = useState<Attendance>({ all: 0, present: 0, late: 0, absent: 0 })
+  const [studentRollStatus, setStudentRollStatus] = useState<RollInput>({ student_roll_states: [] });
 
   //  api calls 
   const [getStudents, data, loadState] = useApi<{ students: Person[] }>({ url: "get-homeboard-students" })
@@ -36,7 +35,6 @@ export const HomeBoardPage: React.FC = () => {
     void getStudents()
   }, [getStudents])
 
-
   useEffect(() => {
     if (data?.students) {
       setStudentData(data?.students)
@@ -44,38 +42,29 @@ export const HomeBoardPage: React.FC = () => {
   }, [loadState, data])
 
   //  Filter  
-  const compare = (a: Person, b: Person, key?: ToolbarOrderBy) => {
-    if (key) {
-      return a[key].localeCompare(b[key])
-    } else {
-      return a.first_name.localeCompare(b.first_name)
-    }
+  const compare = (a: Person, b: Person, key: ToolbarOrderBy = "first_name") => {
+    return a[key].localeCompare(b[key])
   }
 
+  const filterData = (orderIn: ToolbarOrderIn = "ascending", orderBy: ToolbarOrderBy = "first_name") => {
+    let newData = data?.students.sort((a, b) => compare(a, b));
+    return orderIn === "descending" ? newData?.reverse() : newData
+  }
+
+  const filterUsers = useCallback(
+    () => {
+      const newData = filterData(orderIn, orderBy);
+      if (newData) {
+        setStudentData(newData)
+      }
+    },
+    [orderBy, orderIn],
+  );
 
   useEffect(() => {
-    if (orderIn && data?.students) {
-      if (orderIn === "ascending") {
-        setStudentData(() => [...data.students.sort((a, b) => compare(a, b, orderBy))])
-      }
-      if (orderIn === "descending") {
-        setStudentData(() => [...data.students.sort((a, b) => compare(b, a, orderBy))])
-      }
-    }
-  }, [orderBy, orderIn])
+    filterUsers()
+  }, [orderBy, orderIn, filterUsers])
 
-
-  const onToolbarAction = (action: ToolbarAction) => {
-    if (action === "roll") {
-      setIsRollMode(true)
-    }
-  }
-
-  const onToolBarInput = (input: ToolbarInput) => {
-    if (data?.students) {
-      setStudentData(() => [...SearchAlgorithms(input, data?.students)])
-    }
-  }
 
   const onToolBarOrderBy = (value?: ToolbarOrderBy) => {
     setOrderBy(value)
@@ -85,49 +74,65 @@ export const HomeBoardPage: React.FC = () => {
     setOrderIn(value)
   }
 
-  const saveRoll = () => {
-    setRollData()
+
+  const onToolBarInput = (input: ToolbarInput) => {
+    if (data?.students) {
+      setStudentData(() => [...SearchAlgorithms(input, data?.students)])
+    }
+  }
+
+  // Roll Mode
+  const onToolbarAction = (action: ToolbarAction) => {
+    if (action === "roll") {
+      setIsRollMode(true)
+    }
   }
 
   const resetFilter = () => {
+    setIsRollMode(false)
     if (data?.students) {
       setStudentData(data.students)
     }
+    setAttendance({ all: 0, absent: 0, late: 0, present: 0 })
   }
 
   const onActiveRollAction = (action: ActiveRollAction) => {
-    if (action === "exit") {
-      setIsRollMode(false)
-    }
-    if (action === "saveActiveRoll") {
-      saveRoll();
-      setIsRollMode(false)
-    }
     resetFilter()
+    if (action === "saveActiveRoll") {
+      setRollData()
+    }
   }
 
+  const changeAttendance = useCallback(
+    () => {
+      const attendance = getAttendence(studentRollStatus)
+      setAttendance(attendance)
+    },
+    [studentRollStatus],
+  );
 
-  const changeAttendance = () => {
-    let all = 0; let absent = 0; let late = 0; let present = 0;
+  useEffect(() => {
+    changeAttendance()
+  }, [studentRollStatus, changeAttendance])
 
-    data?.students.map((student) => {
-      if (student.rollStatus) {
-        if (student.rollStatus === "present") {
-          present += 1;
-        }
-        if (student.rollStatus === "late") {
-          late += 1;
-        }
-        if (student.rollStatus === "absent") {
-          absent += 1;
-        }
-        all += 1;
-      }
-    })
-    setAttendance({ ...attendance, all, present, late, absent })
+
+  const updateStudentRollStatus = (value: RolllStateType, id: number) => {
+    let index = studentRollStatus.student_roll_states.findIndex(student => student.student_id === id)
+    if (index >= 0) {
+      setStudentRollStatus((previousState) => ({
+        student_roll_states: previousState.student_roll_states.map(((item, i) => i === index
+          ? Object.assign(item, { roll_state: value })
+          : item))
+      }));
+    } else {
+      setStudentRollStatus({
+        student_roll_states: [...studentRollStatus?.student_roll_states, { student_id: id, roll_state: value }]
+      })
+    }
   }
 
-  const updateInStudentList = (value: RolllStateType, id: number) => {
+  const changeRollStatus = (value: RolllStateType, id: number) => {
+    updateStudentRollStatus(value, id)
     data?.students.map((student, index) => {
       if (student.id === id) {
         data.students[index].rollStatus = value;
@@ -135,40 +140,11 @@ export const HomeBoardPage: React.FC = () => {
     })
   }
 
-  const updateAttendanceAndRoll = (value: RolllStateType, id: number) => {
-
-    updateInStudentList(value, id);
-
-    if (studentRollStatus?.student_roll_states.length > 0) {
-      let index = studentRollStatus.student_roll_states.findIndex(student => student.student_id === id)
-      if (index >= 0) {
-        setStudentRollStatus((previousState) => ({
-          // now we'll use cached value
-          student_roll_states: previousState.student_roll_states.map(((item, i) => i === index
-            ? Object.assign(item, { roll_state: value })
-            : item))
-        }));
-      } else {
-        setStudentRollStatus({ student_roll_states: [...studentRollStatus?.student_roll_states, { student_id: id, roll_state: value }] })
-      }
-    } else {
-      setStudentRollStatus({ student_roll_states: [{ student_id: id, roll_state: value }] })
-    }
-  }
-
-
-  const changeRollStatus = (value: RolllStateType, id: number) => {
-    updateAttendanceAndRoll(value, id)
-    changeAttendance()
-  }
-
   const filterByRole = (value: string) => {
     if (data?.students) {
-      if (value === "all") {
-        setStudentData(data?.students)
-      } else {
-        setStudentData([...data?.students.filter((student) => student.rollStatus === value)])
-      }
+      setStudentData([...data?.students.filter((student) =>
+        value === "all" ? student?.rollStatus : student.rollStatus === value
+      )])
     }
   }
 
@@ -202,43 +178,6 @@ export const HomeBoardPage: React.FC = () => {
   )
 }
 
-type ToolbarAction = string
-type ToolbarInput = string
-
-interface ToolbarProps {
-  onItemClick: (action: ToolbarAction, value?: string) => void,
-  onInput: (action: ToolbarInput, value?: string) => void,
-  onSelectOrderIn: (value: ToolbarOrderIn) => void,
-  onSelectOrderBy: (value: ToolbarOrderBy) => void
-}
-
-const Toolbar: React.FC<ToolbarProps> = (props) => {
-  const { onItemClick, onInput, onSelectOrderBy, onSelectOrderIn } = props
-
-  return (
-    <S.ToolbarContainer>
-      <Box>
-        {/* Order In  */}
-        <S.Select defaultValue={"none"} onChange={(event) => onSelectOrderIn(event.target.value as ToolbarOrderIn)}>
-          <S.Option value={"none"} disabled >Order In</S.Option>
-          <S.Option value={"ascending"} >Ascending</S.Option>
-          <S.Option value={"descending"}>Descending</S.Option>
-        </S.Select>
-        {/* Order By  */}
-        < S.Select defaultValue={"none"} onChange={(event) => onSelectOrderBy(event.target.value as ToolbarOrderBy)}>
-          <S.Option value={"none"} disabled >Order By</S.Option>
-          <S.Option value={"first_name"} >First Name</S.Option>
-          <S.Option value={"last_name"}>Last Name</S.Option>
-        </S.Select >
-      </Box >
-      {/* search box  */}
-      < S.SearchBar type="text" name="Search Bar" id="search-bar" placeholder="Search" onChange={(event) => onInput(event.target.value)} />
-      {/* Roll  */}
-      <S.Button onClick={() => onItemClick("roll")}>Start Roll</S.Button>
-    </S.ToolbarContainer >
-  )
-}
-
 const S = {
   PageContainer: styled.div`
     display: flex;
@@ -246,42 +185,6 @@ const S = {
     width: 50%;
     margin: ${Spacing.u4} auto 140px;
   `,
-  ToolbarContainer: styled.div`
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    color: #fff;
-    background-color: ${Colors.blue.base};
-    padding: 6px 14px;
-    font-weight: ${FontWeight.strong};
-    border-radius: ${BorderRadius.default};
-  `,
-  Button: styled(Button)`
-    && {
-      padding: ${Spacing.u2};
-      font-weight: ${FontWeight.strong};
-      border-radius: ${BorderRadius.default};
-    }
-  `,
-  Select: styled.select`{
-    cursor: pointer;
-    padding: 7px;
-    border-radius: 2px;
-    background: transparent;
-    color: white;
-    border: none;
-  }`,
-  Option: styled.option`{
-    background: white;
-    color: black;
-  }`,
-  SearchBar: styled.input`{
-    padding: 6px;
-    border-radius: 2px;
-    background: transparent;
-    color: white;
-    border: 1px solid grey;
-  }`,
   ErrorMessage: styled.p`{
     background: #1b4f90;
     text-align: center;

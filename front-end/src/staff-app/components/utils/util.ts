@@ -1,4 +1,5 @@
 import { Person } from "shared/models/person";
+import { RollInput } from "shared/models/roll";
 
 export function SearchAlgorithms( input: string, data: Person[]) {
     const filterData: Person[] = [];
@@ -15,4 +16,21 @@ export function SearchAlgorithms( input: string, data: Person[]) {
       }
     })
     return filterData;
+}
+
+export function getAttendence (data: RollInput) {
+  let all = 0; let absent = 0; let late = 0; let present = 0;
+  data.student_roll_states.map((student) => {
+        if (student.roll_state === "present") {
+          present += 1;
+        }
+        if (student.roll_state === "late") {
+          late += 1;
+        }
+        if (student.roll_state === "absent") {
+          absent += 1;
+        }
+        all += 1;
+      })
+  return {all, absent, late, present}
 }
