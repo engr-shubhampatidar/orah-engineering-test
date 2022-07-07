@@ -46,24 +46,17 @@ export const HomeBoardPage: React.FC = () => {
     return a[key].localeCompare(b[key])
   }
 
-  const filterData = (orderIn: ToolbarOrderIn = "ascending", orderBy: ToolbarOrderBy = "first_name") => {
-    let newData = data?.students.sort((a, b) => compare(a, b));
+  const filterData = (orderIn: ToolbarOrderIn = "ascending", orderBy: ToolbarOrderBy = "first_name", data: Person[]) => {
+    let newData = data.sort((a, b) => compare(a, b));
     return orderIn === "descending" ? newData?.reverse() : newData
   }
 
-  const filterUsers = useCallback(
-    () => {
-      const newData = filterData(orderIn, orderBy);
-      if (newData) {
-        setStudentData(newData)
-      }
-    },
-    [orderBy, orderIn],
-  );
-
   useEffect(() => {
-    filterUsers()
-  }, [orderBy, orderIn, filterUsers])
+    if (data?.students) {
+      const newData = filterData(orderIn, orderBy, data?.students);
+      setStudentData(() => [...newData])
+    }
+  }, [orderIn, orderBy])
 
 
   const onToolBarOrderBy = (value?: ToolbarOrderBy) => {
