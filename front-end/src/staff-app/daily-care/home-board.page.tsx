@@ -47,7 +47,7 @@ export const HomeBoardPage: React.FC = () => {
   }
 
   const filterData = (orderIn: ToolbarOrderIn = "ascending", orderBy: ToolbarOrderBy = "first_name", data: Person[]) => {
-    let newData = data.sort((a, b) => compare(a, b));
+    let newData = data.sort((a, b) => compare(a, b, orderBy));
     return orderIn === "descending" ? newData?.reverse() : newData
   }
 
@@ -57,7 +57,6 @@ export const HomeBoardPage: React.FC = () => {
       setStudentData(() => [...newData])
     }
   }, [orderIn, orderBy])
-
 
   const onToolBarOrderBy = (value?: ToolbarOrderBy) => {
     setOrderBy(value)

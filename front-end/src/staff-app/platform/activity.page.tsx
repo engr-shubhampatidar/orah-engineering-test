@@ -1,4 +1,4 @@
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, Box } from "@material-ui/core"
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, Box, Grid, Paper } from "@material-ui/core"
 import React, { useEffect } from "react"
 import { useApi } from "shared/hooks/use-api"
 import { Activity } from "shared/models/activity"
@@ -31,31 +31,40 @@ export const ActivityPage: React.FC = () => {
         {loadState === "loaded" &&
           (data?.activity.length ? (
             <>
-              {data.activity.map((roll, index) => {
-                return <S.Box key={index}>
-                  <S.Date>Date - {new Date(roll.date).toLocaleString()}</S.Date>
-                  <S.TableContainer>
-                    <Table>
-                      <TableHead>
-                        <TableRow >
-                          <TableCell align="center" >Student Id</TableCell>
-                          <TableCell align="center" >Roll Status</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {roll?.entity?.student_roll_states.map((activity, index) => {
-                          return (
-                            <TableRow key={index}>
-                              <TableCell align="center">{activity.student_id}</TableCell>
-                              <TableCell align="center" >{activity.roll_state}</TableCell>
-                            </TableRow>
-                          )
-                        })}
-                      </TableBody>
-                    </Table>
-                  </S.TableContainer>
-                </S.Box>
-              })}
+              {/* <S.TableContainer> */}
+              <S.Grid container spacing={2}>
+                {data.activity.map((roll, index) => {
+                  return (
+                    <S.GridItem item xs={6} key={index}>
+
+                      <S.Date>{new Date(roll.date).toLocaleString()}</S.Date>
+                      <Paper>
+                        <S.TableContainer>
+                          <Table stickyHeader>
+                            <TableHead>
+                              <TableRow>
+                                <TableCell align="center">Student Id</TableCell>
+                                <TableCell align="center">Roll Status</TableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {roll?.entity?.student_roll_states.map((activity, index) => {
+                                return (
+                                  <TableRow key={index}>
+                                    <TableCell align="center">{activity.student_id}</TableCell>
+                                    <TableCell align="center">{activity.roll_state}</TableCell>
+                                  </TableRow>
+                                )
+                              })}
+                            </TableBody>
+                          </Table>
+                        </S.TableContainer>
+                      </Paper>
+                    </S.GridItem>
+                  )
+                })}
+              </S.Grid>
+              {/* </S.TableContainer> */}
             </>
           ) : (
             <S.BlankMessage variant="h1">No Activites Yet</S.BlankMessage>
@@ -81,13 +90,28 @@ const S = {
   `,
   TableContainer: styled(TableContainer)`
     && {
-    border-left: 2px solid #1d4ae01f;
-    border-right: 2px solid #1d4ae01f;
-    border-bottom: 22px solid #1d4ae01f;
-    border-bottom-left-radius: 5px;
-    border-bottom-right-radius: 5px;
+      height: 271px;
+      overflow-y: auto;
+      overflow-x: hidden;
+    ::-webkit-scrollbar {
+        -webkit-appearance: none;
     }
-  `,
+
+    ::-webkit-scrollbar:vertical {
+        width: 8px;
+    }
+
+    ::-webkit-scrollbar:horizontal {
+        height: 8px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        border-radius: 8px;
+        border: 2px solid white;
+        background-color: rgb(150 160 195 / 17%)
+    }
+
+    }`,
   Typography: styled(Typography)`
     && {
       background: #343f64;
@@ -98,12 +122,12 @@ const S = {
   `,
   Date: styled(Typography)`
     && {
-    color: white;
-    font-weight: 500;
-    background: #495b9b8c;
-    width: 100%;
-    padding: 2px;
-    border-radius: 5px 5px 0 0;
+      color: white;
+      font-weight: 500;
+      background: #1b4f90;
+      width: 100%;
+      border-radius: 5px 5px 0 0;
+      padding: 10px 0;
     }
   `,
   BlankMessage: styled(Typography)`
@@ -113,7 +137,19 @@ const S = {
       font-weight: ${FontWeight.mediumStrong};
     }
   `,
-  Box: styled(Box)`&&{
-    margin: 10px 0;
-  }`,
+  Box: styled(Box)`
+    && {
+      margin: 10px 0;
+    }
+  `,
+  GridItem: styled(Grid)`
+    &&{
+    }
+  `,
+  Grid: styled(Grid)`
+    &&{
+      justify-content: center;
+      margin-top: 2px;
+    }
+  `,
 }
