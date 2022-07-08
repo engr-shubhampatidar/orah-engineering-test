@@ -93,6 +93,7 @@ const S = {
       height: 271px;
       overflow-y: auto;
       overflow-x: hidden;
+
     ::-webkit-scrollbar {
         -webkit-appearance: none;
     }
@@ -123,7 +124,7 @@ const S = {
   Date: styled(Typography)`
     && {
       color: white;
-      font-weight: 500;
+      font-weight: 300;
       background: #1b4f90;
       width: 100%;
       border-radius: 5px 5px 0 0;
@@ -150,6 +151,7 @@ const S = {
     &&{
       justify-content: center;
       margin-top: 2px;
+      margin-bottom: ${Spacing.u4};
     }
   `,
 }

@@ -66,7 +66,7 @@ export const HomeBoardPage: React.FC = () => {
     setOrderIn(value)
   }
 
-
+  // search
   const onToolBarInput = (input: ToolbarInput) => {
     if (data?.students) {
       setStudentData(() => [...SearchAlgorithms(input, data?.students)])
@@ -80,21 +80,21 @@ export const HomeBoardPage: React.FC = () => {
     }
   }
 
-  const resetFilter = () => {
+  // close roll modal
+  const closeAndResetRoll = () => {
     setIsRollMode(false)
-    if (data?.students) {
-      setStudentData(data.students)
-    }
+    data?.students && setStudentData(data?.students)
     setAttendance({ all: 0, absent: 0, late: 0, present: 0 })
   }
 
   const onActiveRollAction = (action: ActiveRollAction) => {
-    resetFilter()
+    closeAndResetRoll()
     if (action === "saveActiveRoll") {
       setRollData()
     }
   }
 
+  // calculating the attendance & saving
   const changeAttendance = useCallback(
     () => {
       const attendance = getAttendence(studentRollStatus)
@@ -125,14 +125,13 @@ export const HomeBoardPage: React.FC = () => {
 
   const changeRollStatus = (value: RolllStateType, id: number) => {
     updateStudentRollStatus(value, id)
-    data?.students.map((student, index) => {
-      if (student.id === id) {
-        data.students[index].rollStatus = value;
-      }
-    })
+    data?.students.map((student, index) =>
+      student.id === id ?
+        data.students[index].rollStatus = value : data
+    )
   }
 
-  const filterByRole = (value: string) => {
+  const filterByRoll = (value: string) => {
     if (data?.students) {
       setStudentData([...data?.students.filter((student) =>
         value === "all" ? student?.rollStatus : student.rollStatus === value
@@ -165,7 +164,7 @@ export const HomeBoardPage: React.FC = () => {
           </CenteredContainer>
         )}
       </S.PageContainer>
-      <ActiveRollOverlay isActive={isRollMode} onItemClick={onActiveRollAction} attendance={attendance} onRollTypeClick={filterByRole} />
+      <ActiveRollOverlay isActive={isRollMode} onItemClick={onActiveRollAction} attendance={attendance} onRollTypeClick={filterByRoll} />
     </>
   )
 }
@@ -180,7 +179,8 @@ const S = {
   ErrorMessage: styled.p`{
     background: #1b4f90;
     text-align: center;
-    font-weight: 700;
+    padding: 10px;
+    font-weight: 300;
     color: white;
     border-radius: 5px;
   }`
